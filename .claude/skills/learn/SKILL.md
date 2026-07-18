@@ -19,6 +19,13 @@ clear referent — and then ask **exactly one** short question. Otherwise do not
 interrogate: assume a motivated beginner and proceed. If they signalled a level
 ("I know some Python", "I'm a designer, not a coder"), honor it.
 
+If the topic is a **GitHub PR or issue reference** (`#123`, `owner/repo#123`, a
+pull/issues URL), fetch it read-only exactly as the `explain` skill's "FETCH it"
+step describes (resolve the repo from the git remote; `gh pr view` / `gh pr diff`,
+falling back to `gh issue view`; needs `gh` authenticated). Then teach it as a
+**lesson**: what the change does *and* the underlying concepts a newcomer needs to
+follow it — not just an orientation map (that's what `/explain #123` is for).
+
 ## 2. Hand it to a dedicated explainer agent
 
 Delegate the research and authoring to a subagent (the Task/Agent tool, a

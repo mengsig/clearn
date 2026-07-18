@@ -53,6 +53,25 @@ self-contained `.html` explainer and opens it in your browser.
 - **`/explain`** orients you over something that already exists (a codebase, a
   file, a system) — the map and the mental model.
 
+### GitHub PRs and issues
+
+Both commands understand GitHub references:
+
+```
+/explain #33                 a PR or issue in the current repo (from its git remote)
+/explain owner/repo#412       an explicit repo
+/explain https://github.com/owner/repo/pull/33
+/learn #33                    teach the concepts the PR involves, not just a map
+```
+
+`/explain #33` fetches the PR (or issue) read-only and produces a **change map**:
+what it does, why, the clustered files it touches and how they relate, and what to
+review. A bare `#N` resolves the repo from your current directory's git remote;
+`owner/repo#N` or a URL names it explicitly.
+
+This mode uses the [`gh` CLI](https://cli.github.com) and needs it authenticated
+(`gh auth login`). It only ever **reads** — it never comments, labels, or merges.
+
 ### Where explainers are written
 
 By default, into `./out/` in the current directory (git-ignored in this repo). Set

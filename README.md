@@ -16,7 +16,9 @@ Two commands:
   go next.
 - **`/explain <thing>`** — orient me at a high level. You get a map: the key pieces,
   how they fit, and the one mental model that makes the rest click. Great for
-  "what is this codebase / file / concept actually doing?"
+  "what is this codebase / file / concept actually doing?" — and it understands
+  **GitHub PRs and issues**: `/explain #33`, `/explain owner/repo#33`, or a PR/issue
+  URL produces a change map of what the PR does, why, and what to review.
 
 Each command hands your question to a dedicated agent that researches and reasons,
 then writes a **single self-contained `.html` file** (a polished explainer with
@@ -29,6 +31,7 @@ Two explainers built with clearn's own design system (open them rendered):
 
 - 📘 [**/learn** — How the TCP three-way handshake works](https://raw.githack.com/mengsig/clearn/main/examples/learn-tcp-handshake.html)
 - 🗺️ [**/explain** — the clearn repo itself](https://raw.githack.com/mengsig/clearn/main/examples/explain-clearn.html)
+- 🔀 [**/explain #34** — a real GitHub PR, as a change map](https://raw.githack.com/mengsig/clearn/main/examples/explain-pr-manhandler-34.html)
 
 (Or open the files under [`examples/`](examples/) locally — they work offline.)
 
@@ -45,9 +48,12 @@ Restart your Claude Code session, then from anywhere:
 ```
 /learn how does the TCP three-way handshake actually work
 /explain what is going on in this repository
+/explain #33                     # a PR or issue in the current repo
+/explain owner/repo#412          # …or any repo you can reach with gh
 ```
 
-An HTML explainer opens in your browser. Full options — project-scoped install,
+An HTML explainer opens in your browser. GitHub references need the
+[`gh` CLI](https://cli.github.com) authenticated (`gh auth login`). Full options — project-scoped install,
 choosing the output directory, uninstall — are in [`docs/usage.md`](docs/usage.md).
 
 ## What makes it different

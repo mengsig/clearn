@@ -1,0 +1,386 @@
+<!doctype html>
+<!--
+  clearn — learning-artifact template.
+
+  This is the reference design system for every /learn and /explain output. It is
+  a COMPLETE, WORKING demo: open it in a browser to see every component styled in
+  light and dark mode. An agent produces a real explainer by COPYING this file and
+  replacing the demo content between the `<!-- FILL: ... -->` markers, keeping the
+  <style> and <script> blocks intact.
+
+  Rules for whoever fills it in:
+    - One self-contained file. Do not add external stylesheets or scripts other
+      than the Mermaid import already present.
+    - Diagrams go in <pre class="mermaid">…</pre>. If Mermaid can't load, the raw
+      source stays readable — never put information ONLY in a diagram.
+    - Introduce every term before you use it. Keep the reading column prose;
+      put structure in diagrams, callouts, and examples.
+    - Keep the header meta (difficulty, prerequisites, reading time) honest.
+-->
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- FILL: page title — "<Topic> — clearn" -->
+<title>How a hash map works — clearn</title>
+<style>
+  :root {
+    --bg: #f7f7fb;
+    --surface: #ffffff;
+    --surface-2: #f0f1f7;
+    --text: #1b1c22;
+    --muted: #5b5f6e;
+    --border: #e3e4ee;
+    --accent: #5b57e0;
+    --accent-soft: #ecebfb;
+    --accent-text: #4b47c9;
+    --analogy: #b45309;
+    --analogy-soft: #fdf3e3;
+    --tip: #0f766e;
+    --tip-soft: #e6f5f2;
+    --warn: #b91c1c;
+    --warn-soft: #fbeaea;
+    --code-bg: #f3f3fb;
+    --shadow: 0 1px 2px rgba(20,20,40,.05), 0 8px 28px rgba(20,20,40,.06);
+    --radius: 14px;
+    --maxw: 46rem;
+    --mermaid-theme: default;
+  }
+  :root[data-theme="dark"], :root[data-theme="auto"] {}
+  @media (prefers-color-scheme: dark) {
+    :root[data-theme="auto"] {
+      --bg: #0e0f16; --surface: #171923; --surface-2: #1f2230; --text: #e7e8f0;
+      --muted: #a3a7b8; --border: #2a2d3d; --accent: #8b87ff; --accent-soft: #23233a;
+      --accent-text: #b6b3ff; --analogy: #f0b458; --analogy-soft: #2a2113;
+      --tip: #5ec7ba; --tip-soft: #14261f; --warn: #f28b82; --warn-soft: #2a1616;
+      --code-bg: #1d1f2b; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 34px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e0f16; --surface: #171923; --surface-2: #1f2230; --text: #e7e8f0;
+    --muted: #a3a7b8; --border: #2a2d3d; --accent: #8b87ff; --accent-soft: #23233a;
+    --accent-text: #b6b3ff; --analogy: #f0b458; --analogy-soft: #2a2113;
+    --tip: #5ec7ba; --tip-soft: #14261f; --warn: #f28b82; --warn-soft: #2a1616;
+    --code-bg: #1d1f2b; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 34px rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 400 18px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .progress { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: var(--accent); z-index: 50; transition: width .1s linear; }
+  @media (prefers-reduced-motion: reduce) { .progress { transition: none; } }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 1.25rem 6rem; }
+  main { display: block; }
+
+  /* header */
+  .doc-header { max-width: var(--maxw); margin: 3.5rem auto 1.5rem; padding: 0 1.25rem; }
+  .eyebrow { display: inline-flex; align-items: center; gap: .5rem; color: var(--accent-text); font-weight: 700; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; }
+  .eyebrow .dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--accent); }
+  h1 { font-size: clamp(1.9rem, 4vw, 2.7rem); line-height: 1.15; letter-spacing: -.02em; margin: .6rem 0 .4rem; }
+  .subtitle { font-size: 1.15rem; color: var(--muted); margin: 0 0 1.1rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .chip { display: inline-flex; align-items: center; gap: .4rem; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: .3rem .7rem; font-size: .8rem; color: var(--muted); }
+  .chip b { color: var(--text); font-weight: 600; }
+
+  /* tldr */
+  .tldr { background: var(--accent-soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.3rem; margin: 1.5rem 0 2.5rem; }
+  .tldr h2 { margin: 0 0 .4rem; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-text); }
+  .tldr p { margin: 0; font-size: 1.08rem; }
+
+  /* toc */
+  .toc { margin: 0 0 2.5rem; padding: 1rem 1.2rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .toc h2 { margin: 0 0 .6rem; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .toc ol { margin: 0; padding-left: 1.2rem; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover { color: var(--accent-text); text-decoration: underline; }
+
+  /* lesson sections */
+  .lesson { margin: 0 0 3rem; }
+  .lesson > h2 { display: flex; align-items: baseline; gap: .7rem; font-size: 1.5rem; letter-spacing: -.01em; margin: 0 0 .8rem; scroll-margin-top: 1.5rem; }
+  .step-n { flex: none; display: inline-grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 8px; background: var(--accent); color: #fff; font-size: 1rem; font-weight: 700; }
+  .lesson p { margin: 0 0 1rem; }
+  .lesson h3 { font-size: 1.1rem; margin: 1.6rem 0 .5rem; }
+
+  /* callouts */
+  .callout { border-left: 4px solid var(--accent); background: var(--surface); border-radius: 0 var(--radius) var(--radius) 0; padding: .9rem 1.1rem; margin: 1.3rem 0; box-shadow: var(--shadow); }
+  .callout .label { display: block; font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-bottom: .3rem; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.analogy { border-color: var(--analogy); background: var(--analogy-soft); }
+  .callout.analogy .label { color: var(--analogy); }
+  .callout.tip { border-color: var(--tip); background: var(--tip-soft); }
+  .callout.tip .label { color: var(--tip); }
+  .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .callout.warn .label { color: var(--warn); }
+  .callout.note .label { color: var(--accent-text); }
+
+  /* diagrams: allow wide content to scroll inside its own box */
+  .figure { margin: 1.5rem 0; }
+  .figure figcaption { color: var(--muted); font-size: .9rem; margin-top: .5rem; text-align: center; }
+  .diagram-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; overflow-x: auto; box-shadow: var(--shadow); }
+  pre.mermaid { margin: 0; text-align: center; min-height: 2rem; }
+  /* when Mermaid fails to load, show the source legibly instead of hiding it */
+  body.mermaid-failed pre.mermaid { text-align: left; white-space: pre; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .85rem; color: var(--muted); background: var(--code-bg); padding: 1rem; border-radius: 8px; }
+  body.mermaid-failed pre.mermaid::before { content: "diagram source (renderer offline):"; display: block; color: var(--warn); font-size: .75rem; margin-bottom: .5rem; }
+
+  /* code / worked examples */
+  pre.code { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92rem; line-height: 1.6; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92em; background: var(--code-bg); padding: .1rem .35rem; border-radius: 5px; }
+  pre.code code { background: none; padding: 0; }
+
+  /* glossary */
+  .glossary dl { display: grid; grid-template-columns: minmax(7rem, max-content) 1fr; gap: .4rem 1.2rem; margin: 0; }
+  .glossary dt { font-weight: 700; color: var(--accent-text); }
+  .glossary dd { margin: 0; color: var(--text); }
+  @media (max-width: 34rem) { .glossary dl { grid-template-columns: 1fr; gap: .1rem 0; } .glossary dd { margin-bottom: .7rem; } }
+
+  /* check your understanding */
+  .check details { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .3rem 1.1rem; margin: .7rem 0; box-shadow: var(--shadow); }
+  .check summary { cursor: pointer; font-weight: 600; padding: .6rem 0; list-style: none; }
+  .check summary::-webkit-details-marker { display: none; }
+  .check summary::before { content: "▶"; color: var(--accent); font-size: .8rem; margin-right: .6rem; display: inline-block; transition: transform .15s; }
+  .check details[open] summary::before { transform: rotate(90deg); }
+  .check details p { margin: .2rem 0 .8rem; color: var(--muted); }
+
+  /* next steps */
+  .next ul { padding-left: 1.2rem; }
+  .next li { margin: .4rem 0; }
+
+  section.block { background: transparent; margin: 0 0 3rem; }
+  section.block > h2.section-title { font-size: 1.3rem; margin: 0 0 1rem; padding-top: .5rem; border-top: 1px solid var(--border); }
+
+  /* theme toggle */
+  .theme-toggle { position: fixed; top: .9rem; right: .9rem; z-index: 40; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 999px; width: 2.4rem; height: 2.4rem; font-size: 1.1rem; cursor: pointer; box-shadow: var(--shadow); display: grid; place-items: center; }
+  .theme-toggle:hover { border-color: var(--accent); }
+
+  footer { max-width: var(--maxw); margin: 2rem auto 0; padding: 1.5rem 1.25rem; border-top: 1px solid var(--border); color: var(--muted); font-size: .9rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+  footer a { color: var(--accent-text); text-decoration: none; }
+  a { color: var(--accent-text); }
+
+  @media print {
+    .theme-toggle, .progress, .toc { display: none; }
+    body { background: #fff; color: #000; }
+    .callout, .diagram-box, .check details { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<button class="theme-toggle" id="themeToggle" title="Toggle light / dark" aria-label="Toggle light or dark theme">◑</button>
+
+<!-- FILL: header — topic, one-line subtitle, and honest meta chips -->
+<header class="doc-header">
+  <span class="eyebrow"><span class="dot"></span>Learn</span>
+  <h1>How a hash map works</h1>
+  <p class="subtitle">The data structure behind "look something up instantly by its name" — and why it's usually O(1).</p>
+  <div class="chips">
+    <span class="chip">Difficulty: <b>Beginner</b></span>
+    <span class="chip">Prerequisites: <b>arrays, a little code</b></span>
+    <span class="chip">~<b>8 min</b> read</span>
+  </div>
+</header>
+
+<div class="wrap">
+<main>
+  <!-- FILL: the single biggest takeaway, in one or two sentences -->
+  <section class="tldr">
+    <h2>The big idea</h2>
+    <p>A hash map turns a <em>key</em> (like a word) into an <em>array position</em> using a
+    function, so it can jump straight to the value instead of searching. That jump is what
+    makes lookups feel instant.</p>
+  </section>
+
+  <!-- FILL: 3–6 lesson steps that build on each other -->
+  <nav class="toc" aria-label="Contents">
+    <h2>What we'll build up</h2>
+    <ol>
+      <li><a href="#s1">The problem: searching is slow</a></li>
+      <li><a href="#s2">The trick: turn a key into an index</a></li>
+      <li><a href="#s3">Collisions, and how to survive them</a></li>
+      <li><a href="#s4">Why it's usually O(1)</a></li>
+    </ol>
+  </nav>
+
+  <article>
+    <section class="lesson" id="s1">
+      <h2><span class="step-n">1</span>The problem: searching is slow</h2>
+      <p>Imagine a list of 10,000 names and phone numbers. To find one number, you check
+      names one by one until you hit a match. On average that's 5,000 checks. Double the
+      list and you double the work — this is <em>linear</em> time, written <code>O(n)</code>.</p>
+
+      <div class="callout analogy">
+        <span class="label">💡 Analogy</span>
+        <p>It's like finding a friend's house by knocking on every door down the street.
+        A hash map is knowing the house number and walking straight to it.</p>
+      </div>
+    </section>
+
+    <section class="lesson" id="s2">
+      <h2><span class="step-n">2</span>The trick: turn a key into an index</h2>
+      <p>Arrays are fast when you know the index: <code>a[42]</code> is instant. A hash map
+      adds one idea — a <strong>hash function</strong> that turns any key into a number we
+      can use as an index.</p>
+
+      <figure class="figure">
+        <div class="diagram-box">
+<pre class="mermaid">
+flowchart LR
+  K["key: 'Ada'"] --> H["hash('Ada')"]
+  H --> I["42"]
+  I --> A["slots[42] = '555-0100'"]
+  style A fill:#5b57e0,color:#fff
+</pre>
+        </div>
+        <figcaption>The key never touches the array directly — the hash function decides where it lives.</figcaption>
+      </figure>
+
+      <p>Now storing and finding both skip the search: hash the key, go to that slot.</p>
+      <pre class="code"><code>slot = hash(key) % number_of_slots
+slots[slot] = value        # store
+value = slots[hash(key) % n]   # look up</code></pre>
+    </section>
+
+    <section class="lesson" id="s3">
+      <h2><span class="step-n">3</span>Collisions, and how to survive them</h2>
+      <p>Two different keys can hash to the same slot — a <strong>collision</strong>. The
+      common fix is <em>chaining</em>: each slot holds a small list, and colliding keys
+      queue up there.</p>
+
+      <figure class="figure">
+        <div class="diagram-box">
+<pre class="mermaid">
+flowchart TD
+  H["hash('Ada')=3<br/>hash('Bob')=3"] --> S3["slot 3"]
+  S3 --> L1["Ada → 555-0100"]
+  S3 --> L2["Bob → 555-0199"]
+</pre>
+        </div>
+        <figcaption>Slot 3 holds a tiny list; we scan just that list, not the whole map.</figcaption>
+      </figure>
+
+      <div class="callout note">
+        <span class="label">📌 Note</span>
+        <p>Good hash functions spread keys evenly, so chains stay short. If everything
+        collided into one slot, you'd be back to slow linear search.</p>
+      </div>
+    </section>
+
+    <section class="lesson" id="s4">
+      <h2><span class="step-n">4</span>Why it's usually O(1)</h2>
+      <p>If chains stay short (the map resizes as it fills), each lookup does a constant
+      amount of work no matter how many items there are — <code>O(1)</code> on average.</p>
+
+      <div class="callout warn">
+        <span class="label">⚠️ Watch out</span>
+        <p>It's <em>average</em>-case O(1). A bad hash function or an adversary feeding
+        colliding keys can degrade it to O(n). Real libraries defend against this.</p>
+      </div>
+
+      <div class="callout tip">
+        <span class="label">✅ Rule of thumb</span>
+        <p>Reach for a hash map whenever you think "I need to look this up by a name/id
+        fast" and you don't need sorted order.</p>
+      </div>
+    </section>
+  </article>
+
+  <!-- FILL: define every term you introduced -->
+  <section class="block glossary">
+    <h2 class="section-title">Glossary</h2>
+    <dl>
+      <dt>Key</dt><dd>The thing you look up <em>by</em> (a name, an id).</dd>
+      <dt>Hash function</dt><dd>Turns a key into a number used as an array index.</dd>
+      <dt>Collision</dt><dd>Two keys landing in the same slot.</dd>
+      <dt>Chaining</dt><dd>Storing colliding entries in a small per-slot list.</dd>
+      <dt>O(1) / O(n)</dt><dd>"Constant" vs "grows with size" — how work scales with item count.</dd>
+    </dl>
+  </section>
+
+  <!-- FILL: 2–3 questions that check the mental model; answers hidden -->
+  <section class="block check">
+    <h2 class="section-title">Check your understanding</h2>
+    <details><summary>Why is a hash map faster than scanning a list?</summary>
+      <p>It computes the location from the key, so it jumps straight there instead of
+      checking items one by one.</p></details>
+    <details><summary>What breaks the O(1) guarantee?</summary>
+      <p>Many collisions — from a poor hash function or too many items without resizing —
+      which lengthen the per-slot chains back toward linear search.</p></details>
+  </section>
+
+  <!-- FILL: honest next steps, ideally linked -->
+  <section class="block next">
+    <h2 class="section-title">Where to go next</h2>
+    <ul>
+      <li>Open addressing (an alternative to chaining) and load factors.</li>
+      <li>How your language's built-in map/dict is actually implemented.</li>
+      <li>When a balanced tree (sorted, O(log n)) beats a hash map.</li>
+    </ul>
+  </section>
+</main>
+</div>
+
+<footer>
+  <span>Made with <a href="https://github.com/mengsig/clearn">clearn</a> — learn anything, see it clearly.</span>
+  <span>Generated explainer · verify against primary sources.</span>
+</footer>
+
+<script>
+  // Scroll progress bar
+  (function () {
+    var bar = document.getElementById('progress');
+    function upd() {
+      var h = document.documentElement;
+      var max = h.scrollHeight - h.clientHeight;
+      bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+    }
+    document.addEventListener('scroll', upd, { passive: true });
+    window.addEventListener('resize', upd); upd();
+  })();
+
+  // Theme toggle: auto -> light -> dark, remembered for this page's session
+  (function () {
+    var root = document.documentElement, btn = document.getElementById('themeToggle');
+    function apply(t) { root.setAttribute('data-theme', t); renderMermaid(t); }
+    btn.addEventListener('click', function () {
+      var cur = root.getAttribute('data-theme');
+      apply(cur === 'dark' ? 'light' : (cur === 'light' ? 'auto' : 'dark'));
+    });
+    window.__clearnApply = apply;
+  })();
+
+  // Mermaid: import, render with the right theme, re-render on toggle, and fail
+  // gracefully (reveal the diagram source) if the CDN is unreachable.
+  var __sources = [];
+  function currentMode() {
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t === 'dark') return 'dark';
+    if (t === 'light') return 'light';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  var __mermaid = null;
+  function renderMermaid() {
+    if (!__mermaid) return;
+    var nodes = document.querySelectorAll('pre.mermaid');
+    nodes.forEach(function (n, i) {
+      if (__sources[i] === undefined) __sources[i] = n.textContent;
+      n.removeAttribute('data-processed');
+      n.innerHTML = __sources[i];
+    });
+    __mermaid.initialize({ startOnLoad: false, securityLevel: 'strict',
+      theme: currentMode() === 'dark' ? 'dark' : 'default' });
+    __mermaid.run({ nodes: nodes }).catch(function () {});
+  }
+  (function () {
+    var timeout = setTimeout(function () { document.body.classList.add('mermaid-failed'); }, 6000);
+    import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs')
+      .then(function (m) { clearTimeout(timeout); __mermaid = m.default; renderMermaid(); })
+      .catch(function () { clearTimeout(timeout); document.body.classList.add('mermaid-failed'); });
+  })();
+</script>
+</body>
+</html>

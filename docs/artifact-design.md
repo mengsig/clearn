@@ -69,6 +69,12 @@ Rules:
   stays visible — the prose plus the source must still carry the point.
 - Label edges with verbs ("hashes to", "sends", "returns"). Highlight the one node
   that matters with a fill (see the template).
+- **Keep node labels plain.** The template pins Mermaid to `securityLevel: 'strict'`,
+  which strips HTML in labels (`<br/>`, `<b>`) and rejects some characters (`{ }`,
+  `< >`, `$`) — they silently mangle the label or render an error box. So: use a
+  short phrase per node, split a two-line idea into two nodes (or join with a
+  middot `·`), and avoid raw special characters in labels. Verify diagrams actually
+  render, don't assume.
 
 ## Self-contained, always
 

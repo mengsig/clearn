@@ -255,7 +255,8 @@ value = slots[hash(key) % n]   # look up</code></pre>
         <div class="diagram-box">
 <pre class="mermaid">
 flowchart TD
-  H["hash('Ada')=3<br/>hash('Bob')=3"] --> S3["slot 3"]
+  A["hash('Ada') = 3"] --> S3["slot 3"]
+  B["hash('Bob') = 3"] --> S3
   S3 --> L1["Ada → 555-0100"]
   S3 --> L2["Bob → 555-0199"]
 </pre>

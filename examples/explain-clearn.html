@@ -258,13 +258,14 @@ flowchart TD
       of the repo — the default output folder <code>out/</code> and any <code>*.local.html</code> are
       ignored, so your explainers never accidentally get committed.</p>
 
-      <div class="callout warn">
-        <span class="label">⚠️ Honest gap</span>
-        <p>The README's quick start runs <code>./install.sh</code> (it would copy the skills into
-        <code>~/.claude/skills</code>), and the skills already look for a bundled installed copy at
-        <code>~/<wbr>.claude/<wbr>skills/<wbr>clearn/<wbr>assets/<wbr>…</code>. But <strong>no <code>install.sh</code> is in the
-        repo yet</strong> — packaging is designed but not committed. Treat it as planned. Until then,
-        the skills fall back to the in-checkout <code>templates/</code> and <code>docs/</code> paths.</p>
+      <div class="callout tip">
+        <span class="label">✅ Install</span>
+        <p><code>./install.sh</code> copies the skills into <code>~/.claude/skills</code> and the shared
+        design assets into <code>~/<wbr>.claude/<wbr>skills/<wbr>clearn/<wbr>assets/</code>, so <code>/learn</code>
+        and <code>/explain</code> work in any session. It refuses to overwrite a same-named skill it
+        did not install, and <code>--uninstall</code> removes only what it created. Run from inside a
+        clearn checkout, the skills also fall back to the in-repo <code>templates/</code> and
+        <code>docs/</code> paths.</p>
       </div>
     </section>
 

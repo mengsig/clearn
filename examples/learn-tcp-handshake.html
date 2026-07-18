@@ -1,0 +1,467 @@
+<!doctype html>
+<!--
+  clearn — example explainer: the TCP three-way handshake.
+
+  Built from templates/learning-artifact.html: the shared <style> and <script>
+  blocks are kept intact, and the content regions carry a real /learn lesson.
+  Open it in a browser to see the whole design system in light and dark mode.
+-->
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How the TCP three-way handshake works — clearn</title>
+<style>
+  :root {
+    --bg: #f7f7fb;
+    --surface: #ffffff;
+    --surface-2: #f0f1f7;
+    --text: #1b1c22;
+    --muted: #5b5f6e;
+    --border: #e3e4ee;
+    --accent: #5b57e0;
+    --accent-soft: #ecebfb;
+    --accent-text: #4b47c9;
+    --analogy: #b45309;
+    --analogy-soft: #fdf3e3;
+    --tip: #0f766e;
+    --tip-soft: #e6f5f2;
+    --warn: #b91c1c;
+    --warn-soft: #fbeaea;
+    --code-bg: #f3f3fb;
+    --shadow: 0 1px 2px rgba(20,20,40,.05), 0 8px 28px rgba(20,20,40,.06);
+    --radius: 14px;
+    --maxw: 46rem;
+    --mermaid-theme: default;
+  }
+  :root[data-theme="dark"], :root[data-theme="auto"] {}
+  @media (prefers-color-scheme: dark) {
+    :root[data-theme="auto"] {
+      --bg: #0e0f16; --surface: #171923; --surface-2: #1f2230; --text: #e7e8f0;
+      --muted: #a3a7b8; --border: #2a2d3d; --accent: #8b87ff; --accent-soft: #23233a;
+      --accent-text: #b6b3ff; --analogy: #f0b458; --analogy-soft: #2a2113;
+      --tip: #5ec7ba; --tip-soft: #14261f; --warn: #f28b82; --warn-soft: #2a1616;
+      --code-bg: #1d1f2b; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 34px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e0f16; --surface: #171923; --surface-2: #1f2230; --text: #e7e8f0;
+    --muted: #a3a7b8; --border: #2a2d3d; --accent: #8b87ff; --accent-soft: #23233a;
+    --accent-text: #b6b3ff; --analogy: #f0b458; --analogy-soft: #2a2113;
+    --tip: #5ec7ba; --tip-soft: #14261f; --warn: #f28b82; --warn-soft: #2a1616;
+    --code-bg: #1d1f2b; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 34px rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 400 18px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .progress { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: var(--accent); z-index: 50; transition: width .1s linear; }
+  @media (prefers-reduced-motion: reduce) { .progress { transition: none; } }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 1.25rem 6rem; }
+  main { display: block; }
+
+  /* header */
+  .doc-header { max-width: var(--maxw); margin: 3.5rem auto 1.5rem; padding: 0 1.25rem; }
+  .eyebrow { display: inline-flex; align-items: center; gap: .5rem; color: var(--accent-text); font-weight: 700; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; }
+  .eyebrow .dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--accent); }
+  h1 { font-size: clamp(1.9rem, 4vw, 2.7rem); line-height: 1.15; letter-spacing: -.02em; margin: .6rem 0 .4rem; }
+  .subtitle { font-size: 1.15rem; color: var(--muted); margin: 0 0 1.1rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .chip { display: inline-flex; align-items: center; gap: .4rem; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: .3rem .7rem; font-size: .8rem; color: var(--muted); }
+  .chip b { color: var(--text); font-weight: 600; }
+
+  /* tldr */
+  .tldr { background: var(--accent-soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.3rem; margin: 1.5rem 0 2.5rem; }
+  .tldr h2 { margin: 0 0 .4rem; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-text); }
+  .tldr p { margin: 0; font-size: 1.08rem; }
+
+  /* toc */
+  .toc { margin: 0 0 2.5rem; padding: 1rem 1.2rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .toc h2 { margin: 0 0 .6rem; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .toc ol { margin: 0; padding-left: 1.2rem; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover { color: var(--accent-text); text-decoration: underline; }
+
+  /* lesson sections */
+  .lesson { margin: 0 0 3rem; }
+  .lesson > h2 { display: flex; align-items: baseline; gap: .7rem; font-size: 1.5rem; letter-spacing: -.01em; margin: 0 0 .8rem; scroll-margin-top: 1.5rem; }
+  .step-n { flex: none; display: inline-grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 8px; background: var(--accent); color: #fff; font-size: 1rem; font-weight: 700; }
+  .lesson p { margin: 0 0 1rem; }
+  .lesson h3 { font-size: 1.1rem; margin: 1.6rem 0 .5rem; }
+
+  /* callouts */
+  .callout { border-left: 4px solid var(--accent); background: var(--surface); border-radius: 0 var(--radius) var(--radius) 0; padding: .9rem 1.1rem; margin: 1.3rem 0; box-shadow: var(--shadow); }
+  .callout .label { display: block; font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-bottom: .3rem; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.analogy { border-color: var(--analogy); background: var(--analogy-soft); }
+  .callout.analogy .label { color: var(--analogy); }
+  .callout.tip { border-color: var(--tip); background: var(--tip-soft); }
+  .callout.tip .label { color: var(--tip); }
+  .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .callout.warn .label { color: var(--warn); }
+  .callout.note .label { color: var(--accent-text); }
+
+  /* diagrams: allow wide content to scroll inside its own box */
+  .figure { margin: 1.5rem 0; }
+  .figure figcaption { color: var(--muted); font-size: .9rem; margin-top: .5rem; text-align: center; }
+  .diagram-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; overflow-x: auto; box-shadow: var(--shadow); }
+  pre.mermaid { margin: 0; text-align: center; min-height: 2rem; }
+  /* when Mermaid fails to load, show the source legibly instead of hiding it */
+  body.mermaid-failed pre.mermaid { text-align: left; white-space: pre; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .85rem; color: var(--muted); background: var(--code-bg); padding: 1rem; border-radius: 8px; }
+  body.mermaid-failed pre.mermaid::before { content: "diagram source (renderer offline):"; display: block; color: var(--warn); font-size: .75rem; margin-bottom: .5rem; }
+
+  /* code / worked examples */
+  pre.code { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92rem; line-height: 1.6; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92em; background: var(--code-bg); padding: .1rem .35rem; border-radius: 5px; }
+  pre.code code { background: none; padding: 0; }
+
+  /* glossary */
+  .glossary dl { display: grid; grid-template-columns: minmax(7rem, max-content) 1fr; gap: .4rem 1.2rem; margin: 0; }
+  .glossary dt { font-weight: 700; color: var(--accent-text); }
+  .glossary dd { margin: 0; color: var(--text); }
+  @media (max-width: 34rem) { .glossary dl { grid-template-columns: 1fr; gap: .1rem 0; } .glossary dd { margin-bottom: .7rem; } }
+
+  /* check your understanding */
+  .check details { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .3rem 1.1rem; margin: .7rem 0; box-shadow: var(--shadow); }
+  .check summary { cursor: pointer; font-weight: 600; padding: .6rem 0; list-style: none; }
+  .check summary::-webkit-details-marker { display: none; }
+  .check summary::before { content: "▶"; color: var(--accent); font-size: .8rem; margin-right: .6rem; display: inline-block; transition: transform .15s; }
+  .check details[open] summary::before { transform: rotate(90deg); }
+  .check details p { margin: .2rem 0 .8rem; color: var(--muted); }
+
+  /* next steps */
+  .next ul { padding-left: 1.2rem; }
+  .next li { margin: .4rem 0; }
+
+  section.block { background: transparent; margin: 0 0 3rem; }
+  section.block > h2.section-title { font-size: 1.3rem; margin: 0 0 1rem; padding-top: .5rem; border-top: 1px solid var(--border); }
+
+  /* theme toggle */
+  .theme-toggle { position: fixed; top: .9rem; right: .9rem; z-index: 40; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 999px; width: 2.4rem; height: 2.4rem; font-size: 1.1rem; cursor: pointer; box-shadow: var(--shadow); display: grid; place-items: center; }
+  .theme-toggle:hover { border-color: var(--accent); }
+
+  footer { max-width: var(--maxw); margin: 2rem auto 0; padding: 1.5rem 1.25rem; border-top: 1px solid var(--border); color: var(--muted); font-size: .9rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+  footer a { color: var(--accent-text); text-decoration: none; }
+  a { color: var(--accent-text); }
+
+  @media print {
+    .theme-toggle, .progress, .toc { display: none; }
+    body { background: #fff; color: #000; }
+    .callout, .diagram-box, .check details { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<button class="theme-toggle" id="themeToggle" title="Toggle light / dark" aria-label="Toggle light or dark theme">◑</button>
+
+<header class="doc-header">
+  <span class="eyebrow"><span class="dot"></span>Learn</span>
+  <h1>How the TCP three-way handshake works</h1>
+  <p class="subtitle">The three-message conversation that has to happen before two computers can trade a single byte of real data — and why it takes exactly three.</p>
+  <div class="chips">
+    <span class="chip">Difficulty: <b>Beginner–Intermediate</b></span>
+    <span class="chip">Prerequisites: <b>what a client and a server are</b></span>
+    <span class="chip">~<b>7 min</b> read</span>
+  </div>
+</header>
+
+<div class="wrap">
+<main>
+  <section class="tldr">
+    <h2>The big idea</h2>
+    <p>Before two computers can reliably exchange data, they have to agree on two things at once:
+    that they're both <em>here and ready</em>, and <em>which numbers they'll use</em> to order every byte
+    and notice anything lost. The <strong>three-way handshake</strong> is that mutual agreement —
+    settled in exactly three messages: <strong>SYN → SYN-ACK → ACK</strong>.</p>
+  </section>
+
+  <nav class="toc" aria-label="Contents">
+    <h2>What we'll build up</h2>
+    <ol>
+      <li><a href="#s1">Why you can't just start sending</a></li>
+      <li><a href="#s2">Message 1 — SYN: the client proposes a starting number</a></li>
+      <li><a href="#s3">Message 2 — SYN-ACK: the server agrees and proposes its own</a></li>
+      <li><a href="#s4">Message 3 — ACK: the client agrees back, and it's ESTABLISHED</a></li>
+      <li><a href="#s5">What the sequence numbers actually buy you</a></li>
+    </ol>
+  </nav>
+
+  <article>
+    <section class="lesson" id="s1">
+      <h2><span class="step-n">1</span>Why you can't just start sending</h2>
+      <p>The internet underneath TCP is <em>best-effort</em>: it will try to deliver your packets,
+      but it makes no promises. A packet can be dropped, duplicated, delayed, or arrive
+      <em>out of order</em> — packet 3 might show up before packet 1. Nothing at that lower layer
+      fixes this for you.</p>
+
+      <p>So imagine the client just starts blasting data at the server. Two things go wrong.
+      First, the server might not even be <strong>listening</strong> yet — the data lands on a closed
+      door and is thrown away. Second, even if it <em>is</em> listening, when pieces arrive scrambled
+      the server has no way to know the intended order, or that a piece is missing at all.</p>
+
+      <p>TCP's answer is to talk <em>before</em> sending real data. The two sides use a few small
+      control messages to confirm "yes, I'm here and ready," and to each pick a starting
+      number so that from then on every byte has a well-defined position in line. That short
+      opening conversation is the handshake.</p>
+
+      <div class="callout note">
+        <span class="label">📌 Why not just two messages?</span>
+        <p>A TCP connection is <strong>full-duplex</strong> — data flows <em>both</em> ways independently, so
+        <em>each</em> direction needs its own agreed starting number. The client must confirm the
+        server's number, and the server must confirm the client's. Two messages can only get
+        one of those confirmations home; three is the minimum that gets both.</p>
+      </div>
+    </section>
+
+    <section class="lesson" id="s2">
+      <h2><span class="step-n">2</span>Message 1 — SYN: the client proposes a starting number</h2>
+      <p>The client sends a small segment (a TCP message) with the <strong>SYN</strong> flag turned on.
+      SYN is short for <em>synchronize</em>, and the thing being synchronized is the sequence number.
+      The client picks an <strong>initial sequence number</strong> — call it <code>x</code> — and says, in effect,
+      "I want to open a connection, and I'll start numbering my bytes from <code>x</code>."</p>
+
+      <p>It sends this to a specific <strong>port</strong> on the server (port 443 for HTTPS, say) so the
+      right program receives it. After sending, the client is waiting for a reply — this state
+      is called <em>SYN-SENT</em>.</p>
+
+      <div class="callout note">
+        <span class="label">📌 Why not just start at 0?</span>
+        <p>The starting number is chosen semi-randomly, not fixed at 0. That makes it much
+        harder for an outsider to guess valid sequence numbers and inject fake data, and it
+        avoids confusion with stray packets from an earlier connection on the same ports.</p>
+      </div>
+    </section>
+
+    <section class="lesson" id="s3">
+      <h2><span class="step-n">3</span>Message 2 — SYN-ACK: the server agrees and proposes its own</h2>
+      <p>If the server is listening on that port and willing to accept the connection, it
+      replies with a <em>single</em> segment that does two jobs at once — it has <strong>both</strong> the SYN and
+      the <strong>ACK</strong> flags set:</p>
+      <ul>
+        <li>The <strong>ACK</strong> (acknowledge) part says "I got your SYN." It carries an
+        acknowledgement number of <code>x + 1</code> — meaning "the next byte I expect from you is
+        number <code>x + 1</code>." (Why <code>+1</code>? The SYN itself counts as one number in the sequence,
+        so <code>x</code> is used up and <code>x + 1</code> is what comes next.)</li>
+        <li>The <strong>SYN</strong> part is the server doing its own proposing: it picks its <em>own</em> initial
+        sequence number <code>y</code> for the data it will send back to the client.</li>
+      </ul>
+      <p>One message, both halves of the deal: the server confirms the client's number and
+      offers its own. The server is now in a state called <em>SYN-RECEIVED</em>.</p>
+    </section>
+
+    <section class="lesson" id="s4">
+      <h2><span class="step-n">4</span>Message 3 — ACK: the client agrees back, and it's ESTABLISHED</h2>
+      <p>The client now does the mirror image of what the server just did: it acknowledges the
+      server's number. It sends a segment with the <strong>ACK</strong> flag set and an acknowledgement
+      number of <code>y + 1</code> — "I got your SYN too; the next byte I expect from you is <code>y + 1</code>."</p>
+
+      <p>That's the third message. Now <em>both</em> sides have had their starting number confirmed by
+      the other, so both know exactly how to number and check everything that follows. The
+      connection is <strong>ESTABLISHED</strong>, and data can flow in both directions.</p>
+
+      <figure class="figure">
+        <div class="diagram-box">
+<pre class="mermaid">
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+    Note over C,S: Client CLOSED · Server LISTENing
+    C->>S: 1. SYN, seq=x
+    Note right of S: Server: SYN-RECEIVED
+    S->>C: 2. SYN-ACK, seq=y, ack=x+1
+    Note left of C: Client: ESTABLISHED
+    C->>S: 3. ACK, seq=x+1, ack=y+1
+    Note over C,S: ESTABLISHED — data flows both ways
+</pre>
+        </div>
+        <figcaption>Three messages: the client proposes (x), the server agrees and proposes (y), the client agrees. Then real data can move.</figcaption>
+      </figure>
+
+      <p>It helps to watch the <em>client</em> walk through its states: it starts CLOSED, moves to
+      SYN-SENT the moment it sends message 1, and reaches ESTABLISHED once it has received the
+      SYN-ACK and sent its ACK. (The server travels a parallel path: LISTEN → SYN-RECEIVED →
+      ESTABLISHED.)</p>
+
+      <figure class="figure">
+        <div class="diagram-box">
+<pre class="mermaid">
+stateDiagram-v2
+    [*] --> CLOSED
+    CLOSED --> SYN_SENT: send SYN (msg 1)
+    SYN_SENT --> ESTABLISHED: got SYN-ACK, sent ACK (msg 3)
+    ESTABLISHED --> [*]: connection open, data flows
+</pre>
+        </div>
+        <figcaption>The client's journey through the handshake. The server's mirrors it: LISTEN → SYN-RECEIVED → ESTABLISHED.</figcaption>
+      </figure>
+
+      <div class="callout analogy">
+        <span class="label">💡 Analogy: a radio check</span>
+        <p>It's the "can you hear me?" you do before talking on a two-way radio:</p>
+        <p><strong>SYN</strong> — Client: "Can you hear me?"<br>
+        <strong>SYN-ACK</strong> — Server: "Yes, I hear you. Can you hear <em>me</em>?"<br>
+        <strong>ACK</strong> — Client: "Yes, I hear you too."</p>
+        <p>After that exchange each side <em>knows the other can both hear and be heard</em> — so it's
+        safe to start the actual conversation. Two lines wouldn't be enough: the client would
+        never have learned that the server can hear <em>it</em>.</p>
+      </div>
+    </section>
+
+    <section class="lesson" id="s5">
+      <h2><span class="step-n">5</span>What the sequence numbers actually buy you</h2>
+      <p>The handshake isn't just a polite greeting — those two agreed starting numbers are the
+      machinery that makes TCP <em>reliable</em>. Once both sides number their bytes from a known
+      point, the numbers give you three things for free:</p>
+      <ul>
+        <li><strong>Ordering.</strong> Every byte has a sequence number, so the receiver can reassemble
+        the stream in the right order even if packets arrive scrambled.</li>
+        <li><strong>Loss and duplicate detection.</strong> A gap in the numbers means something is missing
+        (and gets re-sent); a number already seen means a duplicate (and gets discarded).</li>
+        <li><strong>Full-duplex flow.</strong> Because <em>each</em> direction has its own agreed number line
+        (<code>x…</code> one way, <code>y…</code> the other), both sides can send at the same time without
+        their streams getting confused.</li>
+      </ul>
+
+      <h3>A worked example, with real numbers</h3>
+      <p>Say the client picks <code>x = 1000</code> and the server picks <code>y = 5000</code>. Here is the whole
+      handshake, spelled out:</p>
+      <pre class="code"><code>1. Client → Server   SYN       seq=1000
+     "Let's talk. My bytes start at 1000."
+
+2. Server → Client   SYN-ACK   seq=5000  ack=1001
+     "Got it (next from you = 1001). My bytes start at 5000."
+
+3. Client → Server   ACK       seq=1001  ack=5001
+     "Got it (next from you = 5001)."
+
+   → ESTABLISHED. If the client now sends 100 bytes of data,
+     they are numbered 1001–1100, and the server will reply
+     with ack=1101 ("give me byte 1101 next").</code></pre>
+      <p>Notice the <code>+1</code> pattern: the server acknowledges <code>1001</code> (not <code>1000</code>) because the
+      client's SYN consumed number <code>1000</code>, and the client acknowledges <code>5001</code> because the
+      server's SYN consumed <code>5000</code>. Each SYN counts as one "byte" for numbering purposes.</p>
+
+      <div class="callout tip">
+        <span class="label">✅ The one-sentence version</span>
+        <p>Three messages, because a reliable two-way connection needs <em>both</em> sides to confirm
+        <em>both</em> starting numbers — and three is the fewest that gets that done.</p>
+      </div>
+    </section>
+  </article>
+
+  <section class="block glossary">
+    <h2 class="section-title">Glossary</h2>
+    <dl>
+      <dt>Segment</dt><dd>One TCP message — the unit TCP sends, carrying flags (like SYN/ACK), sequence numbers, and possibly data.</dd>
+      <dt>SYN</dt><dd>A flag meaning "synchronize." Set on the messages that propose a starting sequence number and open the connection.</dd>
+      <dt>ACK</dt><dd>A flag meaning "acknowledge." Its acknowledgement number says which byte the sender expects <em>next</em>, confirming everything before it arrived.</dd>
+      <dt>Sequence number</dt><dd>The position of a byte in one direction's stream. Both sides pick a starting value during the handshake.</dd>
+      <dt>Port</dt><dd>A number identifying which program on a machine a connection is for (e.g. 443 for HTTPS), so messages reach the right listener.</dd>
+      <dt>Full-duplex</dt><dd>Both directions carry data independently and at the same time — two number lines, one per direction.</dd>
+      <dt>ESTABLISHED</dt><dd>The state after all three messages: both starting numbers are confirmed and real data can flow.</dd>
+    </dl>
+  </section>
+
+  <section class="block check">
+    <h2 class="section-title">Check your understanding</h2>
+    <details><summary>Why three messages and not two?</summary>
+      <p>Because the connection is full-duplex, so <em>both</em> starting numbers must be confirmed.
+      The client's SYN and the server's SYN-ACK confirm the client's number and propose the
+      server's — but the server still needs proof its own number arrived. The client's final
+      ACK is that proof. Two messages leave one side's number unconfirmed.</p></details>
+    <details><summary>Why does the server acknowledge <code>x + 1</code> and not <code>x</code>?</summary>
+      <p>The acknowledgement number names the <em>next</em> byte expected, not the last one received.
+      The SYN itself counts as one number in the sequence, so it uses up <code>x</code>; the next thing
+      the server expects is therefore <code>x + 1</code>.</p></details>
+    <details><summary>The handshake finishes, but the first data packet arrives before an earlier one. Is the connection broken?</summary>
+      <p>No — this is exactly what the sequence numbers are for. Each byte carries its position,
+      so the receiver buffers the out-of-order piece and reassembles the stream correctly once
+      the gap fills in. A truly missing piece shows up as a gap in the numbers and gets re-sent.</p></details>
+  </section>
+
+  <section class="block next">
+    <h2 class="section-title">Where to go next</h2>
+    <ul>
+      <li><strong>Closing a connection</strong> — the teardown is its own small handshake using the <code>FIN</code>
+      flag (FIN → ACK each way). Because each direction closes independently, it's often four
+      messages, not three.</li>
+      <li><strong>What TLS adds on top</strong> — the TCP handshake only sets up a reliable pipe; it does
+      nothing for privacy. TLS runs <em>after</em> it to negotiate encryption keys, so an HTTPS
+      request pays for both handshakes before any page data moves.</li>
+      <li><strong>Congestion control</strong> — once ESTABLISHED, TCP doesn't just fire data as fast as it
+      can; algorithms like slow start and CUBIC ramp the rate up and back off on loss to avoid
+      overwhelming the network.</li>
+      <li>For the exact rules, read the source of truth: <a href="https://www.rfc-editor.org/rfc/rfc9293.html">RFC 9293</a>,
+      the current TCP specification.</li>
+    </ul>
+  </section>
+</main>
+</div>
+
+<footer>
+  <span>Made with <a href="https://github.com/mengsig/clearn">clearn</a> — learn anything, see it clearly.</span>
+  <span>Generated explainer · verify against primary sources.</span>
+</footer>
+
+<script>
+  // Scroll progress bar
+  (function () {
+    var bar = document.getElementById('progress');
+    function upd() {
+      var h = document.documentElement;
+      var max = h.scrollHeight - h.clientHeight;
+      bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+    }
+    document.addEventListener('scroll', upd, { passive: true });
+    window.addEventListener('resize', upd); upd();
+  })();
+
+  // Theme toggle: auto -> light -> dark, remembered for this page's session
+  (function () {
+    var root = document.documentElement, btn = document.getElementById('themeToggle');
+    function apply(t) { root.setAttribute('data-theme', t); renderMermaid(t); }
+    btn.addEventListener('click', function () {
+      var cur = root.getAttribute('data-theme');
+      apply(cur === 'dark' ? 'light' : (cur === 'light' ? 'auto' : 'dark'));
+    });
+    window.__clearnApply = apply;
+  })();
+
+  // Mermaid: import, render with the right theme, re-render on toggle, and fail
+  // gracefully (reveal the diagram source) if the CDN is unreachable.
+  var __sources = [];
+  function currentMode() {
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t === 'dark') return 'dark';
+    if (t === 'light') return 'light';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  var __mermaid = null;
+  function renderMermaid() {
+    if (!__mermaid) return;
+    var nodes = document.querySelectorAll('pre.mermaid');
+    nodes.forEach(function (n, i) {
+      if (__sources[i] === undefined) __sources[i] = n.textContent;
+      n.removeAttribute('data-processed');
+      n.innerHTML = __sources[i];
+    });
+    __mermaid.initialize({ startOnLoad: false, securityLevel: 'strict',
+      theme: currentMode() === 'dark' ? 'dark' : 'default' });
+    __mermaid.run({ nodes: nodes }).catch(function () {});
+  }
+  (function () {
+    var timeout = setTimeout(function () { document.body.classList.add('mermaid-failed'); }, 6000);
+    import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs')
+      .then(function (m) { clearTimeout(timeout); __mermaid = m.default; renderMermaid(); })
+      .catch(function () { clearTimeout(timeout); document.body.classList.add('mermaid-failed'); });
+  })();
+</script>
+</body>
+</html>

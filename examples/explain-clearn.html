@@ -1,0 +1,412 @@
+<!doctype html>
+<!--
+  clearn — an /explain orientation to the clearn repo itself, built on the
+  clearn learning-artifact design system (templates/learning-artifact.html).
+  Self-contained: inline CSS/JS, the one Mermaid import, and its offline fallback.
+-->
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>clearn, explained — clearn</title>
+<style>
+  :root {
+    --bg: #f7f7fb;
+    --surface: #ffffff;
+    --surface-2: #f0f1f7;
+    --text: #1b1c22;
+    --muted: #5b5f6e;
+    --border: #e3e4ee;
+    --accent: #5b57e0;
+    --accent-soft: #ecebfb;
+    --accent-text: #4b47c9;
+    --analogy: #b45309;
+    --analogy-soft: #fdf3e3;
+    --tip: #0f766e;
+    --tip-soft: #e6f5f2;
+    --warn: #b91c1c;
+    --warn-soft: #fbeaea;
+    --code-bg: #f3f3fb;
+    --shadow: 0 1px 2px rgba(20,20,40,.05), 0 8px 28px rgba(20,20,40,.06);
+    --radius: 14px;
+    --maxw: 46rem;
+    --mermaid-theme: default;
+  }
+  :root[data-theme="dark"], :root[data-theme="auto"] {}
+  @media (prefers-color-scheme: dark) {
+    :root[data-theme="auto"] {
+      --bg: #0e0f16; --surface: #171923; --surface-2: #1f2230; --text: #e7e8f0;
+      --muted: #a3a7b8; --border: #2a2d3d; --accent: #8b87ff; --accent-soft: #23233a;
+      --accent-text: #b6b3ff; --analogy: #f0b458; --analogy-soft: #2a2113;
+      --tip: #5ec7ba; --tip-soft: #14261f; --warn: #f28b82; --warn-soft: #2a1616;
+      --code-bg: #1d1f2b; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 34px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e0f16; --surface: #171923; --surface-2: #1f2230; --text: #e7e8f0;
+    --muted: #a3a7b8; --border: #2a2d3d; --accent: #8b87ff; --accent-soft: #23233a;
+    --accent-text: #b6b3ff; --analogy: #f0b458; --analogy-soft: #2a2113;
+    --tip: #5ec7ba; --tip-soft: #14261f; --warn: #f28b82; --warn-soft: #2a1616;
+    --code-bg: #1d1f2b; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 34px rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 400 18px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .progress { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: var(--accent); z-index: 50; transition: width .1s linear; }
+  @media (prefers-reduced-motion: reduce) { .progress { transition: none; } }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 1.25rem 6rem; }
+  main { display: block; }
+
+  /* header */
+  .doc-header { max-width: var(--maxw); margin: 3.5rem auto 1.5rem; padding: 0 1.25rem; }
+  .eyebrow { display: inline-flex; align-items: center; gap: .5rem; color: var(--accent-text); font-weight: 700; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; }
+  .eyebrow .dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--accent); }
+  h1 { font-size: clamp(1.9rem, 4vw, 2.7rem); line-height: 1.15; letter-spacing: -.02em; margin: .6rem 0 .4rem; }
+  .subtitle { font-size: 1.15rem; color: var(--muted); margin: 0 0 1.1rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .chip { display: inline-flex; align-items: center; gap: .4rem; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: .3rem .7rem; font-size: .8rem; color: var(--muted); }
+  .chip b { color: var(--text); font-weight: 600; }
+
+  /* tldr */
+  .tldr { background: var(--accent-soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.3rem; margin: 1.5rem 0 2.5rem; }
+  .tldr h2 { margin: 0 0 .4rem; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-text); }
+  .tldr p { margin: 0; font-size: 1.08rem; }
+
+  /* toc */
+  .toc { margin: 0 0 2.5rem; padding: 1rem 1.2rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .toc h2 { margin: 0 0 .6rem; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .toc ol { margin: 0; padding-left: 1.2rem; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover { color: var(--accent-text); text-decoration: underline; }
+
+  /* lesson sections */
+  .lesson { margin: 0 0 3rem; }
+  .lesson > h2 { display: flex; align-items: baseline; gap: .7rem; font-size: 1.5rem; letter-spacing: -.01em; margin: 0 0 .8rem; scroll-margin-top: 1.5rem; }
+  .step-n { flex: none; display: inline-grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 8px; background: var(--accent); color: #fff; font-size: 1rem; font-weight: 700; }
+  .lesson p { margin: 0 0 1rem; }
+  .lesson h3 { font-size: 1.1rem; margin: 1.6rem 0 .5rem; }
+
+  /* callouts */
+  .callout { border-left: 4px solid var(--accent); background: var(--surface); border-radius: 0 var(--radius) var(--radius) 0; padding: .9rem 1.1rem; margin: 1.3rem 0; box-shadow: var(--shadow); }
+  .callout .label { display: block; font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-bottom: .3rem; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.analogy { border-color: var(--analogy); background: var(--analogy-soft); }
+  .callout.analogy .label { color: var(--analogy); }
+  .callout.tip { border-color: var(--tip); background: var(--tip-soft); }
+  .callout.tip .label { color: var(--tip); }
+  .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .callout.warn .label { color: var(--warn); }
+  .callout.note .label { color: var(--accent-text); }
+
+  /* diagrams: allow wide content to scroll inside its own box */
+  .figure { margin: 1.5rem 0; }
+  .figure figcaption { color: var(--muted); font-size: .9rem; margin-top: .5rem; text-align: center; }
+  .diagram-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; overflow-x: auto; box-shadow: var(--shadow); }
+  pre.mermaid { margin: 0; text-align: center; min-height: 2rem; }
+  /* when Mermaid fails to load, show the source legibly instead of hiding it */
+  body.mermaid-failed pre.mermaid { text-align: left; white-space: pre; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .85rem; color: var(--muted); background: var(--code-bg); padding: 1rem; border-radius: 8px; }
+  body.mermaid-failed pre.mermaid::before { content: "diagram source (renderer offline):"; display: block; color: var(--warn); font-size: .75rem; margin-bottom: .5rem; }
+
+  /* code / worked examples */
+  pre.code { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92rem; line-height: 1.6; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92em; background: var(--code-bg); padding: .1rem .35rem; border-radius: 5px; }
+  pre.code code { background: none; padding: 0; }
+
+  /* glossary */
+  .glossary dl { display: grid; grid-template-columns: minmax(7rem, max-content) 1fr; gap: .4rem 1.2rem; margin: 0; }
+  .glossary dt { font-weight: 700; color: var(--accent-text); }
+  .glossary dd { margin: 0; color: var(--text); }
+  @media (max-width: 34rem) { .glossary dl { grid-template-columns: 1fr; gap: .1rem 0; } .glossary dd { margin-bottom: .7rem; } }
+
+  /* check your understanding */
+  .check details { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .3rem 1.1rem; margin: .7rem 0; box-shadow: var(--shadow); }
+  .check summary { cursor: pointer; font-weight: 600; padding: .6rem 0; list-style: none; }
+  .check summary::-webkit-details-marker { display: none; }
+  .check summary::before { content: "▶"; color: var(--accent); font-size: .8rem; margin-right: .6rem; display: inline-block; transition: transform .15s; }
+  .check details[open] summary::before { transform: rotate(90deg); }
+  .check details p { margin: .2rem 0 .8rem; color: var(--muted); }
+
+  /* next steps */
+  .next ul { padding-left: 1.2rem; }
+  .next li { margin: .4rem 0; }
+
+  section.block { background: transparent; margin: 0 0 3rem; }
+  section.block > h2.section-title { font-size: 1.3rem; margin: 0 0 1rem; padding-top: .5rem; border-top: 1px solid var(--border); }
+
+  /* theme toggle */
+  .theme-toggle { position: fixed; top: .9rem; right: .9rem; z-index: 40; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 999px; width: 2.4rem; height: 2.4rem; font-size: 1.1rem; cursor: pointer; box-shadow: var(--shadow); display: grid; place-items: center; }
+  .theme-toggle:hover { border-color: var(--accent); }
+
+  footer { max-width: var(--maxw); margin: 2rem auto 0; padding: 1.5rem 1.25rem; border-top: 1px solid var(--border); color: var(--muted); font-size: .9rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+  footer a { color: var(--accent-text); text-decoration: none; }
+  a { color: var(--accent-text); }
+
+  @media print {
+    .theme-toggle, .progress, .toc { display: none; }
+    body { background: #fff; color: #000; }
+    .callout, .diagram-box, .check details { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<button class="theme-toggle" id="themeToggle" title="Toggle light / dark" aria-label="Toggle light or dark theme">◑</button>
+
+<header class="doc-header">
+  <span class="eyebrow"><span class="dot"></span>Explain</span>
+  <h1>clearn, explained</h1>
+  <p class="subtitle">What this repo is, the handful of files that matter, and the one idea that makes the rest click.</p>
+  <div class="chips">
+    <span class="chip">Audience: <b>new contributor</b></span>
+    <span class="chip">Altitude: <b>map, not course</b></span>
+    <span class="chip">~<b>5 min</b> read</span>
+  </div>
+</header>
+
+<div class="wrap">
+<main>
+  <section class="tldr">
+    <h2>The big idea</h2>
+    <p><strong>clearn</strong> is a Claude Code <em>skill pack</em>: its <code>/learn</code> and
+    <code>/explain</code> commands hand your question to a dedicated subagent that fills a shared,
+    self-contained HTML template into a diagram-rich explainer and opens it in your browser. The
+    repo is small on purpose — a couple of instruction files, one template, one design doc.</p>
+  </section>
+
+  <nav class="toc" aria-label="Contents">
+    <h2>The map</h2>
+    <ol>
+      <li><a href="#s1">How a question becomes an explainer</a></li>
+      <li><a href="#s2">The pieces (and where they live)</a></li>
+      <li><a href="#s3">The mental model: instructions + design system + author</a></li>
+    </ol>
+  </nav>
+
+  <article>
+    <section class="lesson" id="s1">
+      <h2><span class="step-n">1</span>How a question becomes an explainer</h2>
+      <p>Everything in clearn exists to serve one flow. You type a slash command in a Claude Code
+      session; a <em>skill</em> — a markdown file of instructions — takes over, delegates the real
+      work to a focused subagent, and the subagent produces a single HTML file and opens it. No
+      server, no build step, nothing to host.</p>
+
+      <figure class="figure">
+        <div class="diagram-box">
+<pre class="mermaid">
+flowchart TD
+  U["You type /learn or /explain a topic"] -->|"triggers"| SK
+  SK["The SKILL.md workflow · .claude/skills/learn or explain"] -->|"delegates to"| SUB
+  SUB["A dedicated subagent · researches and reads the real thing"] -->|"copies and fills"| FILL
+  FILL["Fills templates/learning-artifact.html · guided by docs/artifact-design.md"] -->|"writes"| OUT
+  OUT["One self-contained .html file · saved in out/ or CLEARN_OUT"] -->|"opens"| OPEN["Your browser"]
+  style FILL fill:#5b57e0,color:#fff
+</pre>
+        </div>
+        <figcaption>The whole repo is the machinery around that one arrow from question to opened file. The heart is the fill step.</figcaption>
+      </figure>
+
+      <div class="callout note">
+        <span class="label">📌 The two altitudes</span>
+        <p><code>/learn</code> and <code>/explain</code> share the same output format and design
+        system; they differ only in <em>altitude</em>. <code>/learn</code> teaches a topic from the
+        ground up (3–6 lesson steps, worked examples). <code>/explain</code> — what you're reading
+        now — orients you over something that already exists: big picture, key pieces, how they fit.
+        Lost in a <em>thing</em> (a repo, a file)? That's <code>/explain</code>. Want to understand a
+        <em>concept</em> you don't know yet? That's <code>/learn</code>.</p>
+      </div>
+    </section>
+
+    <section class="lesson" id="s2">
+      <h2><span class="step-n">2</span>The pieces (and where they live)</h2>
+      <p>The tracked repo is deliberately tiny. Here is every file that matters and the job it does.</p>
+
+      <h3><code>.claude/skills/learn/</code> and <code>.claude/skills/explain/</code></h3>
+      <p>Two skills, each a single <code>SKILL.md</code>. A skill is a named bundle of instructions
+      Claude Code loads when you invoke it. Each file carries YAML front-matter (<code>name</code>,
+      <code>description</code>) that registers the slash command, then a workflow: read the request,
+      hand it to a subagent with an <em>authoring contract</em>, and save-and-open the result. They
+      are near-twins that differ in <strong>altitude</strong> — <code>learn</code> teaches from first
+      principles; <code>explain</code> maps what already exists and, when pointed at real code, insists
+      the subagent <em>read it first</em> so the diagram reflects reality rather than a generic guess.</p>
+
+      <h3><code>templates/<wbr>learning-<wbr>artifact.html</code> — the design system</h3>
+      <p>One self-contained HTML file that is both the reference design and a working demo: open it
+      and every component is styled in light and dark mode. It is theme-aware (an <code>auto</code>
+      default plus a toggle), responsive, and renders <strong>Mermaid</strong> diagrams with a
+      graceful offline fallback — if the renderer can't load, the diagram <em>source</em> stays
+      readable instead of vanishing. The subagent copies this file and replaces the content between
+      its <code>&lt;!-- FILL: … --&gt;</code> markers, keeping the <code>&lt;style&gt;</code> and
+      <code>&lt;script&gt;</code> blocks intact. This very page is that template, filled in.</p>
+
+      <h3><code>docs/artifact-design.md</code> — the authoring judgment</h3>
+      <p>The template gives you the <em>look</em>; this doc gives you the <em>judgment</em>: write for
+      someone who doesn't know this yet, motivate before mechanism, introduce every term before using
+      it, find one mental model and return to it, pick the Mermaid diagram type that fits, and never
+      put information only in a diagram. It also spells out the <code>/learn</code>-vs-<code>/explain</code>
+      altitude split. It is the taste the skills point their subagents at.</p>
+
+      <h3><code>README.md</code>, <code>LICENSE</code>, <code>.gitignore</code>, and packaging</h3>
+      <p>The <code>README</code> is the front door (what clearn is, quick start, what makes it
+      different). <code>LICENSE</code> is MIT. <code>.gitignore</code> keeps generated explainers out
+      of the repo — the default output folder <code>out/</code> and any <code>*.local.html</code> are
+      ignored, so your explainers never accidentally get committed.</p>
+
+      <div class="callout tip">
+        <span class="label">✅ Install</span>
+        <p><code>./install.sh</code> copies the skills into <code>~/.claude/skills</code> and the shared
+        design assets into <code>~/<wbr>.claude/<wbr>skills/<wbr>clearn/<wbr>assets/</code>, so <code>/learn</code>
+        and <code>/explain</code> work in any session. It refuses to overwrite a same-named skill it
+        did not install, and <code>--uninstall</code> removes only what it created. Run from inside a
+        clearn checkout, the skills also fall back to the in-repo <code>templates/</code> and
+        <code>docs/</code> paths.</p>
+      </div>
+    </section>
+
+    <section class="lesson" id="s3">
+      <h2><span class="step-n">3</span>The mental model: instructions + design system + author</h2>
+      <p>If you remember one thing, remember the separation of concerns. clearn cleanly splits three
+      jobs that could easily have been tangled into one prompt:</p>
+
+      <figure class="figure">
+        <div class="diagram-box">
+<pre class="mermaid">
+flowchart LR
+  SKILLS["The skills · the instructions"] -->|"brief"| AUTHOR
+  DESIGN["Template and design doc · the design system"] -->|"constrain"| AUTHOR
+  AUTHOR["The subagent · the focused author"] -->|"produces"| HTML["One portable .html file"]
+  style HTML fill:#5b57e0,color:#fff
+</pre>
+        </div>
+        <figcaption>Instructions say what to do; the design system says how it should look and read; a subagent does the work; the output is one file you own.</figcaption>
+      </figure>
+
+      <p>The <strong>skills are instructions</strong> — <em>what</em> to produce and <em>how</em> to run
+      the workflow. The <strong>template plus the design doc are the design system</strong> — the shared
+      look and the authoring taste, so every explainer feels like a sibling. The <strong>subagent is a
+      focused author</strong> — the research and writing happen in a fresh context so your main session
+      stays light. And the output is <strong>one portable HTML file</strong> — self-contained, so you can
+      keep it, share it, or open it offline.</p>
+
+      <div class="callout analogy">
+        <span class="label">💡 Analogy</span>
+        <p>Think of a magazine. The skills are the <em>editor's brief</em> ("write a 5-minute
+        orientation"), the template and design doc are the <em>house style guide and layout</em>, and the
+        subagent is the <em>writer</em> assigned that one piece. clearn keeps those three roles separate so
+        each can improve on its own — retune the taste in one doc, restyle everything in one template.</p>
+      </div>
+
+      <div class="callout tip">
+        <span class="label">✅ Why the split matters to you</span>
+        <p>Want every explainer to look different? Edit the template. Want them to <em>read</em>
+        differently (more rigor, gentler ramp)? Edit <code>docs/artifact-design.md</code>. Want a new kind
+        of command? Add a skill. The boundaries are where you make changes.</p>
+      </div>
+    </section>
+  </article>
+
+  <section class="block glossary">
+    <h2 class="section-title">Glossary</h2>
+    <dl>
+      <dt>Skill</dt><dd>A named bundle of instructions (here, a single <code>SKILL.md</code> with YAML front-matter) that Claude Code loads to perform a task.</dd>
+      <dt>Slash command</dt><dd>How you invoke a skill in a session — typing <code>/learn</code> or <code>/explain</code> followed by your topic.</dd>
+      <dt>Subagent / delegation</dt><dd>A separate, focused Claude agent the skill hands the research and authoring to, keeping your main session light and the work concentrated.</dd>
+      <dt>Self-contained artifact</dt><dd>One HTML file with all its CSS and JS inlined — no server, no external assets to fetch — so it works offline and travels as a single file.</dd>
+      <dt>Mermaid</dt><dd>A library that renders diagrams from a plain-text description; clearn embeds it with an offline fallback that shows the diagram source if it can't load.</dd>
+      <dt>Design system</dt><dd>The shared look and authoring rules — the template plus <code>docs/artifact-design.md</code> — that make every explainer feel like part of one family.</dd>
+    </dl>
+  </section>
+
+  <section class="block check">
+    <h2 class="section-title">Check your understanding</h2>
+    <details><summary>You want every future explainer to use a warmer color palette. Which file do you touch?</summary>
+      <p><code>templates/<wbr>learning-<wbr>artifact.html</code> — the design system owns the look. The skills
+      and the subagent don't hardcode styling; they fill the template's regions, so a change there
+      flows to every explainer.</p></details>
+    <details><summary>Why hand the work to a subagent instead of writing the HTML in the main session?</summary>
+      <p>Separation of concerns and focus: the research and authoring run in a fresh context so your
+      main session stays light, and the subagent can concentrate its full effort on one explainer.</p></details>
+    <details><summary>What's the real difference between <code>/learn</code> and <code>/explain</code>?</summary>
+      <p>Altitude, not format. They share the template and design system. <code>/learn</code> teaches a
+      concept from first principles; <code>/explain</code> maps something that already exists so you can
+      navigate it.</p></details>
+  </section>
+
+  <section class="block next">
+    <h2 class="section-title">Start here / read next</h2>
+    <ul>
+      <li><strong><code>README.md</code></strong> — the front door: what clearn is, the quick start, and what makes it different.</li>
+      <li><strong><code>.claude/<wbr>skills/<wbr>explain/<wbr>SKILL.md</code></strong> (or <code>learn/SKILL.md</code>) — the workflow and the authoring contract a command actually runs.</li>
+      <li><strong><code>templates/<wbr>learning-<wbr>artifact.html</code></strong> — open it in a browser to see the design system live, then read the fill markers to see exactly what a subagent replaces.</li>
+      <li><strong><code>docs/artifact-design.md</code></strong> — the authoring judgment: the reader model, the two altitudes, and how to choose a diagram.</li>
+    </ul>
+  </section>
+</main>
+</div>
+
+<footer>
+  <span>Made with <a href="https://github.com/mengsig/clearn">clearn</a> — learn anything, see it clearly.</span>
+  <span>Generated explainer · verify against primary sources.</span>
+</footer>
+
+<script>
+  // Scroll progress bar
+  (function () {
+    var bar = document.getElementById('progress');
+    function upd() {
+      var h = document.documentElement;
+      var max = h.scrollHeight - h.clientHeight;
+      bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+    }
+    document.addEventListener('scroll', upd, { passive: true });
+    window.addEventListener('resize', upd); upd();
+  })();
+
+  // Theme toggle: auto -> light -> dark, remembered for this page's session
+  (function () {
+    var root = document.documentElement, btn = document.getElementById('themeToggle');
+    function apply(t) { root.setAttribute('data-theme', t); renderMermaid(t); }
+    btn.addEventListener('click', function () {
+      var cur = root.getAttribute('data-theme');
+      apply(cur === 'dark' ? 'light' : (cur === 'light' ? 'auto' : 'dark'));
+    });
+    window.__clearnApply = apply;
+  })();
+
+  // Mermaid: import, render with the right theme, re-render on toggle, and fail
+  // gracefully (reveal the diagram source) if the CDN is unreachable.
+  var __sources = [];
+  function currentMode() {
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t === 'dark') return 'dark';
+    if (t === 'light') return 'light';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  var __mermaid = null;
+  function renderMermaid() {
+    if (!__mermaid) return;
+    var nodes = document.querySelectorAll('pre.mermaid');
+    nodes.forEach(function (n, i) {
+      if (__sources[i] === undefined) __sources[i] = n.textContent;
+      n.removeAttribute('data-processed');
+      n.innerHTML = __sources[i];
+    });
+    __mermaid.initialize({ startOnLoad: false, securityLevel: 'strict',
+      theme: currentMode() === 'dark' ? 'dark' : 'default' });
+    __mermaid.run({ nodes: nodes }).catch(function () {});
+  }
+  (function () {
+    var timeout = setTimeout(function () { document.body.classList.add('mermaid-failed'); }, 6000);
+    import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs')
+      .then(function (m) { clearTimeout(timeout); __mermaid = m.default; renderMermaid(); })
+      .catch(function () { clearTimeout(timeout); document.body.classList.add('mermaid-failed'); });
+  })();
+</script>
+</body>
+</html>

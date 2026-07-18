@@ -31,6 +31,7 @@ Two explainers built with clearn's own design system (open them rendered):
 
 - 📘 [**/learn** — How the TCP three-way handshake works](https://raw.githack.com/mengsig/clearn/main/examples/learn-tcp-handshake.html)
 - 🗺️ [**/explain** — the clearn repo itself](https://raw.githack.com/mengsig/clearn/main/examples/explain-clearn.html)
+- 🔀 [**/explain #34** — a real GitHub PR, as a change map](https://raw.githack.com/mengsig/clearn/main/examples/explain-pr-manhandler-34.html)
 
 (Or open the files under [`examples/`](examples/) locally — they work offline.)
 

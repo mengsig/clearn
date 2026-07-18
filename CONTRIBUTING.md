@@ -12,27 +12,43 @@ and a design system — so the bar is *quality*, not quantity.
 - `docs/artifact-design.md` — how to author a good explainer.
 - `examples/` — finished explainers that double as the quality bar.
 - `install.sh` — copies skills + assets into a Claude Code skills directory.
+- `tests/check.sh` — the verification harness (below).
+
+## Verifying a change
+
+One command asserts the repo's integrity guarantees — run it before you open a PR:
+
+```sh
+bash tests/check.sh      # exit 0 = all passed
+```
+
+It checks, over the real files: the template's and every example's embedded JS
+parses; each example's `<style>`/`<script>` is byte-identical to the template; no
+example still carries an unfilled `<!-- FILL: … -->` region or the template's
+placeholder demo content; Mermaid labels obey strict mode; each skill's frontmatter
+`name:` matches its directory; and `install.sh` installs, refuses to clobber a
+foreign skill, and uninstalls cleanly (all in a throwaway temp dir). The JS-parse
+checks need `node`; if it is absent they are skipped with a warning.
+
+The harness cannot see a rendered page, so a design-system or example change still
+needs a human eye — see below.
 
 ## Working on the design system or an example
 
 Every explainer must stay **self-contained**: one `.html` file, inline CSS/JS, and
-the single Mermaid import already in the template (keep its offline fallback). Before
-you open a PR, check the artifact:
+the single Mermaid import already in the template (keep its offline fallback). After
+`tests/check.sh` is green, open the artifact in a browser and confirm, in BOTH light
+and dark mode:
 
-```sh
-# 1. the embedded JS still parses
-awk '/^<script>$/{f=1;next} /^<\/script>$/{f=0} f' <file>.html > /tmp/a.mjs && node --check /tmp/a.mjs
-
-# 2. open it in a browser and confirm, in BOTH light and dark mode:
-#    - every Mermaid diagram renders (no error box, no run-together labels)
-#    - nothing overflows the viewport except inside a scroll box
-#    - narrow (~360px) and wide both look right
-```
+- every Mermaid diagram renders (no error box, no run-together labels)
+- nothing overflows the viewport except inside a scroll box
+- narrow (~360px) and wide both look right
 
 Keep the template's `<style>` and `<script>` byte-for-byte when you build from it —
-only the content between the `<!-- FILL: … -->` markers should change. Mind the
-Mermaid label constraints documented in `docs/artifact-design.md` (strict mode
-strips `<br/>`/`<b>` and rejects `{ } < > $` in labels).
+only the content between the `<!-- FILL: … -->` markers should change (the harness
+enforces both). Mind the Mermaid label constraints documented in
+`docs/artifact-design.md` (strict mode strips `<br/>`/`<b>` and rejects `{ } < > $`
+in labels).
 
 ## Working on a skill
 
